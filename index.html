@@ -9,6 +9,7 @@ ul#todo-list {
 }
 ul#todo-list li {
 	margin-bottom: 0.5em;
+	transition: opacity 1s, max-height 1s;
 }
 ul#todo-list input {
 	margin-right: 0.5em;
@@ -17,10 +18,16 @@ ul#todo-list input:checked + span.content {
 	text-decoration: line-through;
 	color: #999;
 }
+ul#todo-list li.new {
+	visibility: hidden;
+	max-height: 0;
+	opacity: 0;
+}
 </style>
 
 <h1>TODO:</h1>
 <ul id="todo-list">
+	<li class="new"><label><input type="checkbox"><span class="content"></span></label></li>
 </ul>
 
 <form id="new-item">
@@ -66,14 +73,19 @@ var todoList = new TodoList
 document.addEventListener('DOMContentLoaded', function () {
 	todoList.load()
 	
-	todoList.data.forEach(addTodoItem)
+	todoList.data.forEach(function (item, index) {
+		setTimeout(addTodoItem, 250 * index, item, index)
+	})
 })
 
 todoList.onupdate = function () {
 	var list = document.getElementById('todo-list')
-	while (list.childNodes.length > 0) list.firstChild.remove()
+	while (list.childNodes.length > 1) list.firstChild.remove()
 
-	todoList.data.forEach(addTodoItem)	
+	//todoList.data.forEach(addTodoItem)
+	todoList.data.forEach(function (item, index) {
+		setTimeout(addTodoItem, 250 * index, item, index)
+	})
 }
 
 document.getElementById('new-item').addEventListener('submit', function (e) {
@@ -94,19 +106,14 @@ document.getElementById('todo-list').addEventListener('click', function (e) {
 
 function addTodoItem(item, index) {
 	var list = document.getElementById('todo-list')
-	var li = document.createElement('li')
+	var li = list.querySelector('li.new')
+	list.appendChild(li.cloneNode(true))
+	li.classList.remove('new')
 	li.dataset.index = index
-	list.appendChild(li)
-	var label =  document.createElement('label')
-	li.appendChild(label)
-	var checkbox = document.createElement('input')
-	checkbox.type = 'checkbox'
+	var checkbox = li.querySelector('input[type=checkbox]')
 	checkbox.checked = item.done
-	label.appendChild(checkbox)
-	var content = document.createElement('span')
-	content.classList.add('content')	
-	label.appendChild(content)
-	content.appendChild(document.createTextNode(item.content))
+	var content = li.querySelector('span.content')
+	content.textContent = item.content
 }
 
 </script>
