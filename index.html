@@ -31,7 +31,15 @@ ul#todo-list input:checked + span.content {
 <script>
 'use strict'
 
-function TodoList() {}
+function TodoList() {
+	var _this = this
+	window.addEventListener('storage', function (e) {
+		if (e.key === 'todo-list') {
+			_this.load()
+			if (typeof _this.onupdate === 'function') _this.onupdate()
+		}
+	})
+}
 TodoList.prototype.load = function () {
 	var data = localStorage.getItem('todo-list')
 	if (data) data = JSON.parse(data)
@@ -60,6 +68,13 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	todoList.data.forEach(addTodoItem)
 })
+
+todoList.onupdate = function () {
+	var list = document.getElementById('todo-list')
+	while (list.childNodes.length > 0) list.firstChild.remove()
+
+	todoList.data.forEach(addTodoItem)	
+}
 
 document.getElementById('new-item').addEventListener('submit', function (e) {
 	todoList.add(this.elements['content'].value)
