@@ -1,0 +1,97 @@
+<!doctype html>
+
+<style>
+h1 {
+	font-size: 1.2em; 
+}
+ul#todo-list {
+	list-style: none; 
+}
+ul#todo-list li {
+	margin-bottom: 0.5em;
+}
+ul#todo-list input {
+	margin-right: 0.5em;
+}
+ul#todo-list input:checked + span.content {
+	text-decoration: line-through;
+	color: #999;
+}
+</style>
+
+<h1>TODO:</h1>
+<ul id="todo-list">
+</ul>
+
+<form id="new-item">
+	<input name="content" type="text" required placeholder="New task">
+	<input type="submit" value="add">
+</form>
+
+<script>
+'use strict'
+
+function TodoList() {}
+TodoList.prototype.load = function () {
+	var data = localStorage.getItem('todo-list')
+	if (data) data = JSON.parse(data)
+	else data = [{content: 'Task 1', done: true}, {content: 'Task 2', done: false}]
+	this.data = data
+}
+TodoList.prototype.save = function () {
+	localStorage.setItem('todo-list', JSON.stringify(this.data))
+}
+TodoList.prototype.add = function (content) {
+	this.data.push({content: content, done: false})
+	this.save()
+}
+TodoList.prototype.updateStatus = function (index, done) {
+	this.data[index].done = done
+	this.save()
+}
+</script>
+
+<script>
+
+var todoList = new TodoList
+
+document.addEventListener('DOMContentLoaded', function () {
+	todoList.load()
+	
+	todoList.data.forEach(addTodoItem)
+})
+
+document.getElementById('new-item').addEventListener('submit', function (e) {
+	todoList.add(this.elements['content'].value)
+	this.elements['content'].value = ''
+	e.preventDefault()
+	
+	addTodoItem(todoList.data[todoList.data.length - 1], todoList.data.length - 1)
+})
+
+document.getElementById('todo-list').addEventListener('click', function (e) {
+	if (e.target.matches('input[type=checkbox]')) {
+		var li = e.target.parentNode.parentNode
+		todoList.updateStatus(li.dataset.index, e.target.checked)
+	}
+})
+
+
+function addTodoItem(item, index) {
+	var list = document.getElementById('todo-list')
+	var li = document.createElement('li')
+	li.dataset.index = index
+	list.appendChild(li)
+	var label =  document.createElement('label')
+	li.appendChild(label)
+	var checkbox = document.createElement('input')
+	checkbox.type = 'checkbox'
+	checkbox.checked = item.done
+	label.appendChild(checkbox)
+	var content = document.createElement('span')
+	content.classList.add('content')	
+	label.appendChild(content)
+	content.appendChild(document.createTextNode(item.content))
+}
+
+</script>
