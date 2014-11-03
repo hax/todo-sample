@@ -36,70 +36,49 @@ ul#todo-list li.new {
 </form>
 
 <script>
-'use strict'
 
-function TodoList() {
-	var _this = this
-	window.addEventListener('storage', function (e) {
-		if (e.key === 'todo-list') {
-			_this.load()
-			if (typeof _this.onupdate === 'function') _this.onupdate()
-		}
-	})
+var todoList = new SharedWorker('todo.js')
+
+todoList.port.onmessage = function (e) {
+	if (typeof e.data !== 'object') {
+		console.log(e.data)
+	} else {
+		todoUI[e.data.command](e.data)
+	}
 }
-TodoList.prototype.load = function () {
-	var data = localStorage.getItem('todo-list')
-	if (data) data = JSON.parse(data)
-	else data = [{content: 'Task 1', done: true}, {content: 'Task 2', done: false}]
-	this.data = data
-}
-TodoList.prototype.save = function () {
-	localStorage.setItem('todo-list', JSON.stringify(this.data))
-}
-TodoList.prototype.add = function (content) {
-	this.data.push({content: content, done: false})
-	this.save()
-}
-TodoList.prototype.updateStatus = function (index, done) {
-	this.data[index].done = done
-	this.save()
-}
-</script>
 
-<script>
+var todoUI = {
+	load: function (data) {
+		var list = document.getElementById('todo-list')
+		while (list.childNodes.length > 1) list.firstChild.remove()
 
-var todoList = new TodoList
-
-document.addEventListener('DOMContentLoaded', function () {
-	todoList.load()
-	
-	todoList.data.forEach(function (item, index) {
-		setTimeout(addTodoItem, 250 * index, item, index)
-	})
-})
-
-todoList.onupdate = function () {
-	var list = document.getElementById('todo-list')
-	while (list.childNodes.length > 1) list.firstChild.remove()
-
-	//todoList.data.forEach(addTodoItem)
-	todoList.data.forEach(function (item, index) {
-		setTimeout(addTodoItem, 250 * index, item, index)
-	})
+		data.list.forEach(addTodoItem)
+	},
+	add: function (data) {
+		addTodoItem(data.item)
+	},
+	update: function (data) {
+		updateTodoItem(data.item, data.index)
+	}
 }
 
 document.getElementById('new-item').addEventListener('submit', function (e) {
-	todoList.add(this.elements['content'].value)
+	todoList.postMessage({
+		command: 'add',
+		content: this.elements['content'].value
+	})
 	this.elements['content'].value = ''
 	e.preventDefault()
-	
-	addTodoItem(todoList.data[todoList.data.length - 1], todoList.data.length - 1)
 })
 
 document.getElementById('todo-list').addEventListener('click', function (e) {
 	if (e.target.matches('input[type=checkbox]')) {
 		var li = e.target.parentNode.parentNode
-		todoList.updateStatus(li.dataset.index, e.target.checked)
+		todoList.postMessage({
+			command: 'update',
+			index: li.dataset.index,
+			done: e.target.checked
+		})
 	}
 })
 
@@ -114,6 +93,15 @@ function addTodoItem(item, index) {
 	checkbox.checked = item.done
 	var content = li.querySelector('span.content')
 	content.textContent = item.content
+}
+
+function updateTodoItem(item, index) {
+	var list = document.getElementById('todo-list')
+	var li = list.querySelector('li.new[data-index=' + index + ']')
+	var checkbox = li.querySelector('input[type=checkbox]')
+	checkbox.checked = item.done
+	var content = li.querySelector('span.content')
+	content.textContent = item.content	
 }
 
 </script>
