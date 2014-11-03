@@ -46,11 +46,12 @@ todoList.port.onmessage = function (e) {
 		todoUI[e.data.command](e.data)
 	}
 }
+todoList.onerror = function (e) { console.error(e) }
 
 var todoUI = {
 	load: function (data) {
 		var list = document.getElementById('todo-list')
-		while (list.childNodes.length > 1) list.firstChild.remove()
+		while (list.children.length > 1) list.firstChild.remove()
 
 		data.list.forEach(addTodoItem)
 	},
@@ -63,7 +64,7 @@ var todoUI = {
 }
 
 document.getElementById('new-item').addEventListener('submit', function (e) {
-	todoList.postMessage({
+	todoList.port.postMessage({
 		command: 'add',
 		content: this.elements['content'].value
 	})
@@ -74,7 +75,7 @@ document.getElementById('new-item').addEventListener('submit', function (e) {
 document.getElementById('todo-list').addEventListener('click', function (e) {
 	if (e.target.matches('input[type=checkbox]')) {
 		var li = e.target.parentNode.parentNode
-		todoList.postMessage({
+		todoList.port.postMessage({
 			command: 'update',
 			index: li.dataset.index,
 			done: e.target.checked
@@ -97,7 +98,7 @@ function addTodoItem(item, index) {
 
 function updateTodoItem(item, index) {
 	var list = document.getElementById('todo-list')
-	var li = list.querySelector('li.new[data-index=' + index + ']')
+	var li = list.querySelector('li[data-index="' + index + '"]')
 	var checkbox = li.querySelector('input[type=checkbox]')
 	checkbox.checked = item.done
 	var content = li.querySelector('span.content')
